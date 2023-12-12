@@ -15,6 +15,7 @@ $btnPushTxt       = 'Push'
 $btnExitTxt       = 'Exit'
 $btnListTxt       = 'List'
 $txtPackageTxt    = 'CORE'
+$btnPromoteTxt    = "Promote"
 ####################################################################################
 #                                 listPackageComponents                            #
 ####################################################################################
@@ -1180,7 +1181,7 @@ function mainWindow {
     $btnPromote10 = New-Object System.Windows.Forms.Button
     $btnPromote10.Location = New-Object System.Drawing.Point(160, 230)
     $btnPromote10.Size = New-Object System.Drawing.Size(75, 23)
-    $btnPromote10.Text = $btnPullTxt
+    $btnPromote10.Text = $btnPromoteTxt
     $btnPromote10.Add_Click({ promote10 })
     $frmMainWindow.Controls.Add($btnPromote10)
 
