@@ -6,6 +6,7 @@ Add-Type -AssemblyName System.Drawing
 #  Definitions                                                                     #
 ####################################################################################
 $user = 'XZ0670'
+$compileJCLSuffix = '##'
 #
 $lblMainWindowTxt = 'ChangeMan'
 $lblPackageTxt    = 'Package'
@@ -15,6 +16,7 @@ $btnPushTxt       = 'Push'
 $btnExitTxt       = 'Exit'
 $btnListTxt       = 'List'
 $txtPackageTxt    = 'CORE'
+
 ####################################################################################
 #                                 listPackageComponents                            #       
 ####################################################################################
@@ -83,6 +85,7 @@ function listPackageComponents() {
             $componentItem.SubItems.Add("SRC")
             $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
+            $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
     }
@@ -97,6 +100,7 @@ function listPackageComponents() {
             $componentItem.SubItems.Add("CPY")
             $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
+            $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
     }
@@ -110,6 +114,7 @@ function listPackageComponents() {
             $componentItem.Text = $lstUnloads[$i]
             $componentItem.SubItems.Add("UNL")
             $componentItem.SubItems.Add("-")
+            $componentItem.SubItems.Add("")
             $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
@@ -131,12 +136,12 @@ function pushComponent() {
     $packageNumber = $txtBoxPackage.Text.Substring(4, 6)
     $userName = $txtBoxUser.Text
 
-
     for ($i = 0; $i -lt $listViewComponents.SelectedItems.Count; $i++) {
         $componentName= $listViewComponents.SelectedItems.Item($i).SubItems[0].Text
         $componentExtension = $listViewComponents.SelectedItems.Item($i).SubItems[1].Text
         $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = '-'
         $listViewComponents.SelectedItems.Item($i).SubItems[3].Text = ''
+        $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = ''
         Write-Host "   | " $componentName'.'$componentExtension                   
         $progressBar.Value = 1
 
@@ -201,12 +206,11 @@ CNT=00001"
                 $sourceType = $componentName.substring(2, 1)
             }
 
-            $job = "//" + $userName + "PS JOB (851,985,995),'Push - $componentName',
+            $job = "//" + $userName + "PS JOB (851,985,995),'PUSH::$componentName',
 //         MSGCLASS=X,CLASS=D
 //*
 //*        -----------------------------------------------------------
 //*        IEBCOPY: COPIA DE ELEMENTO DE UM UTILIZADOR PARA O PACOTE
-//*        -----------------------------------------------------------
 //*        -----------------------------------------------------------
 //JOBLIB   DD  DISP=SHR,
 //             DSN=SYSU.MG1D.CMNZMF.PROD.LOAD
@@ -248,7 +252,7 @@ OBJ=CMPONENT,MSG=BUILD,PKN=CORE$packageNumber,
 LTP=$componentExtension,PRC=BMPCOBE ,LNG=COBOLE  ,
 $sourceType
 DB2=Y,DBS=DB2D,DBL=SYS1.DB2.SDSNLOAD                           ,
-JC1=//" + $userName + "B JOB ,'Compilar CORE$packageNumber',MSGCLASS=X,
+JC1=//" + $userName + $compileJCLSuffix + " JOB ,'COMPILE::CORE$packageNumber',MSGCLASS=X,
 JC2=//         NOTIFY=XZ0670,CLASS=N
 JC3=//*
 JC4=//*
@@ -268,8 +272,38 @@ CNT=00001"
         
         $progressBar.Value = 3
         
-        jobSubmit 'Push'             
+        # Não é possível deletar jobs de compilação... 
+        #@(listJobs '' $userName$compileJCLSuffix 'jobid') | ForEach-Object {purgeJobByJobID $_}
         
+        
+        if (jobSubmit -jobType 'Push')
+        {   
+            $compilationJobID = ''
+            @(listJobs '' $userName$compileJCLSuffix '') | ForEach-Object {if($_.status -eq "ACTIVE"){$compilationJobID = $_.jobid}}
+            #Write-Host $compilationJobID
+            if ($compilationJobID -eq '') {
+                @(listJobs '' $userName$compileJCLSuffix '') | ForEach-Object {if($_.status -eq "ACTIVE"){$compilationJobID = $_.jobid}}                
+                if ($compilationJobID -eq '') 
+                {
+                    @(listJobs '' $userName$compileJCLSuffix '') | ForEach-Object {if($_.status -eq "ACTIVE"){$compilationJobID = $_.jobid}}                
+                    if ($compilationJobID -eq '') 
+                    {
+                        Write-Host 'Job Not Found'
+                    }
+                }
+            }
+        }
+                                                                                          
+        if ($compilationJobID -ne '')
+        {
+            $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = getJobRC $compilationJobID
+        }                                                                                       
+        else 
+        {
+            $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = 'n/a'    
+        }
+        
+
         $progressBar.Value = 5
     }
   
@@ -292,6 +326,7 @@ function pullComponent() {
         $componentExtension = $listViewComponents.SelectedItems.Item($i).SubItems[1].Text
         $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = '-'
         $listViewComponents.SelectedItems.Item($i).SubItems[3].Text = ''
+        $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = ''
         Write-Host "   | " $componentName'.'$componentExtension                   
 
         $progressBar.Value = 1
@@ -317,7 +352,6 @@ function pullComponent() {
 //*
 //*        -----------------------------------------------------------
 //*        IEBCOPY: COPIA DE ELEMENTO DE UM PACOTE PARA O UTILIZADOR
-//*        -----------------------------------------------------------
 //*        -----------------------------------------------------------
 //COPIA    EXEC PGM=IEBCOPY,COND=(0,NE)
 //SYSPRINT DD SYSOUT=*
@@ -349,7 +383,7 @@ function jobSubmit() {
     $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = $jobType + ' Ok'
     $progressBar.Value = 4
 
-    Write-Host   $outputJCL
+    #Write-Host   $outputJCL
 
     $data = $outputJCL | ConvertFrom-Json       
     
@@ -366,12 +400,73 @@ function jobSubmit() {
     $listViewComponents.SelectedItems.Item($i).SubItems[3].Text = $returnCode
     if ($returnCode -ne '0000'){
         $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = $jobType + ' Not Ok'
+        return '0'
+    }else{
+        return '1'}
+}    
+####################################################################################
+#                                   getJobRC                                       #
+####################################################################################
+function getJobRC() {    
+    Param($FgJRCjobID)
+    Write-Host " > getJobRC"    
+    Write-Host "   | " $FgJRCjobID
+    $FgJRCjobRC = 'null'
+    do{
+        $FgJRCjobRC =  (zowe zos-jobs view job-status-by-jobid $FgJRCjobID --rff retcode --rft string)      
     }
+    while ($FgJRCjobRC -eq 'null')
+    return $FgJRCjobRC.Substring(3,4)
+}  
+####################################################################################
+#                                   purgeJobByJobID                               #
+####################################################################################
+function purgeJobByJobID() {   
+    Param($FpJBJIjobID)      
+    Write-Host " > purgeJobByJobID"    
+    Write-Host "   | " $FpJBJIjobID
+    $FpJBJIdeletedJob = @(zowe zos-jobs delete job $FpJBJIjobID)
+    Write-Host $FpJBJIdeletedJob
+}    
+####################################################################################
+#                                   listJobs                                       #
+####################################################################################
+function listJobs() {   
+    Param($FlJjobOwner, $FlJjobPrefix, $FlJjobListFilter)
+    Write-Host " > listJobs"    
+    Write-Host "   | " $FlJjobOwner $FlJjobPrefix $FlJjobListFilter
+    $FlJOutput = @()
+
+    if ($FlJjobOwner -eq ''){
+        $FlJjobOwner = '*'
+    }
+
+    if ($FlJjobPrefix -eq ''){
+        $FlJjobPrefix = '*'
+    }
+
+    if ($FlJjobListFilter -eq ''){
+        $FlJOutput = @(zowe zos-jobs list jobs -o $FlJjobOwner -p $FlJjobPrefix --rft list) | ConvertFrom-Json
+    }
+    else {
+        $FlJOutput = @(zowe zos-jobs list jobs -o $FlJjobOwner -p $FlJjobPrefix --rft list --rff $FlJjobListFilter) | ConvertFrom-Json
+    }      
+
+    #Write-Host $FlJOutput
+    #Write-Host $FlJOutput[0].jobid
+    #Write-Host $FlJOutput[0].retcode
+    #Write-Host $FlJOutput[0].status
+    #return $FlJOutput | ConvertFrom-Json            
+    
+    return $FlJOutput
+
 }    
 ####################################################################################
 #                       refreshList                                                #
 ####################################################################################
-function refreshList {        
+function refreshList {    
+    Write-Host " > refreshList"       
+
     $progressBar.Value = 0
     $progressBar.Refresh
 
@@ -382,6 +477,10 @@ function refreshList {
     $listViewComponents.Columns[1].Width = -2 
     $listViewComponents.Columns[2].Width = -2 
     $listViewComponents.Columns[3].Width = -2 
+    $listViewComponents.Columns[4].Width = -2 
+
+    Write-Host ' (waiting)'    
+    return 
 }
 ####################################################################################
 #                        main                                                      #
@@ -389,7 +488,7 @@ function refreshList {
 function mainWindow {
 
     Write-Host "mainWindow"
-
+    
     $frmMainWindow = New-Object System.Windows.Forms.Form
     $frmMainWindow.Text = $lblMainWindowTxt
     $frmMainWindow.Size = New-Object System.Drawing.Size(300, 300)
@@ -467,6 +566,9 @@ function mainWindow {
     $listViewComponents.Columns[2].Width = -2
     $listViewComponents.Columns.Add("RC")
     $listViewComponents.Columns[3].Width = -2
+    $frmMainWindow.Controls.Add($listViewComponents)      
+    $listViewComponents.Columns.Add("Compile RC")
+    $listViewComponents.Columns[4].Width = -2
     $frmMainWindow.Controls.Add($listViewComponents)  
 
 
@@ -504,7 +606,7 @@ function mainWindow {
     $frmMainWindow.Controls.Add($progressBar)
 
     $frmMainWindow.Topmost = $true
-    $frmMainWindow.ShowDialog()
+    $frmMainWindow.ShowDialog()    
 
 }
 ####################################################################################
