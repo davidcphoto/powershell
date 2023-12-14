@@ -5,12 +5,8 @@ Add-Type -AssemblyName System.Drawing
 ####################################################################################
 #  Definitions                                                                     #
 ####################################################################################
-<<<<<<< HEAD
-$user = 'X93182'
-=======
 $user = 'XZ0670'
 $compileJCLSuffix = '##'
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
 #
 $lblMainWindowTxt = 'ChangeMan'
 $lblPackageTxt    = 'Package'
@@ -20,11 +16,8 @@ $btnPushTxt       = 'Push'
 $btnExitTxt       = 'Exit'
 $btnListTxt       = 'List'
 $txtPackageTxt    = 'CORE'
-<<<<<<< HEAD
 $btnPromoteTxt    = "Promote"
-=======
 
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
 ####################################################################################
 #                                 listPackageComponents                            #
 ####################################################################################
@@ -93,11 +86,8 @@ function listPackageComponents() {
             $componentItem.SubItems.Add("SRC")
             $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
-<<<<<<< HEAD
-            $componentItem.SubItems.Add("--")
-=======
             $componentItem.SubItems.Add("")
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
+            $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
     }
@@ -110,13 +100,9 @@ function listPackageComponents() {
             $componentItem = New-Object System.Windows.Forms.ListViewItem
             $componentItem.Text = $lstCopybooks[$i]
             $componentItem.SubItems.Add("CPY")
-            $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
-<<<<<<< HEAD
-            $componentItem.SubItems.Add("--")
-=======
             $componentItem.SubItems.Add("")
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
+            $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
     }
@@ -131,11 +117,8 @@ function listPackageComponents() {
             $componentItem.SubItems.Add("UNL")
             $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
-<<<<<<< HEAD
-            $componentItem.SubItems.Add("--")
-=======
             $componentItem.SubItems.Add("")
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
+            $componentItem.SubItems.Add("")
             $listViewComponents.Items.Add($componentItem)
         }
     }
@@ -161,13 +144,9 @@ function pushComponent() {
         $componentExtension = $listViewComponents.SelectedItems.Item($i).SubItems[1].Text
         $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = '-'
         $listViewComponents.SelectedItems.Item($i).SubItems[3].Text = ''
-<<<<<<< HEAD
-        $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = '00'
-        Write-Host "   | " $componentName'.'$componentExtension
-=======
         $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = ''
+        $listViewComponents.SelectedItems.Item($i).SubItems[5].Text = '00'
         Write-Host "   | " $componentName'.'$componentExtension
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
         $progressBar.Value = 1
 
         if ($componentExtension -eq "cpy") {
@@ -339,10 +318,8 @@ CNT=00001
         $job | Out-file -encoding ASCII -noNewline -FilePath "$env:TEMP\Job.JCL"
 
         $progressBar.Value = 3
-<<<<<<< HEAD
 
         jobSubmit 'Push'
-=======
 
         # Não é possível deletar jobs de compilação...
         #@(listJobs '' $userName$compileJCLSuffix 'jobid') | ForEach-Object {purgeJobByJobID $_}
@@ -375,8 +352,6 @@ CNT=00001
             $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = 'n/a'
         }
 
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
-
         $progressBar.Value = 5
     }
 
@@ -400,11 +375,8 @@ function pullComponent() {
         $listViewComponents.SelectedItems.Item($i).SubItems[2].Text = '-'
         $listViewComponents.SelectedItems.Item($i).SubItems[3].Text = ''
         $listViewComponents.SelectedItems.Item($i).SubItems[4].Text = ''
-<<<<<<< HEAD
+        $listViewComponents.SelectedItems.Item($i).SubItems[5].Text = ''
         Write-Host "   | " $componentName'.'$componentExtension
-=======
-        Write-Host "   | " $componentName'.'$componentExtension
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
 
         $progressBar.Value = 1
 
@@ -500,13 +472,11 @@ function getJobRC() {
     do{
         $FgJRCjobRC =  (zowe zos-jobs view job-status-by-jobid $FgJRCjobID --rff retcode --rft string)
     }
-<<<<<<< HEAD
 }
 ####################################################################################
 #                       refreshList                                                #
 ####################################################################################
 function refreshList {
-=======
     while ($FgJRCjobRC -eq 'null')
     return $FgJRCjobRC.Substring(3,4)
 }
@@ -559,7 +529,6 @@ function listJobs() {
 function refreshList {
     Write-Host " > refreshList"
 
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
     $progressBar.Value = 0
     $progressBar.Refresh
 
@@ -567,11 +536,11 @@ function refreshList {
     $listViewComponents.Refresh()
 
     $listViewComponents.Columns[0].Width = -1
-<<<<<<< HEAD
     $listViewComponents.Columns[1].Width = -2
     $listViewComponents.Columns[2].Width = -2
     $listViewComponents.Columns[3].Width = -2
     $listViewComponents.Columns[4].Width = -2
+    $listViewComponents.Columns[5].Width = -2
 }
 
 ####################################################################################
@@ -802,16 +771,11 @@ function mainWindow {
     $listViewComponents.Columns[2].Width = -2
     $listViewComponents.Columns.Add("RC")
     $listViewComponents.Columns[3].Width = -2
-<<<<<<< HEAD
-    $listViewComponents.Columns.Add("Level")
-    $listViewComponents.Columns[4].Width = -2
-    $frmMainWindow.Controls.Add($listViewComponents)
-=======
-    $frmMainWindow.Controls.Add($listViewComponents)
     $listViewComponents.Columns.Add("Compile RC")
     $listViewComponents.Columns[4].Width = -2
+    $listViewComponents.Columns.Add("Level")
+    $listViewComponents.Columns[5].Width = -2
     $frmMainWindow.Controls.Add($listViewComponents)
->>>>>>> c9e42ee546742b976209c34e402bb5a1e282ca8f
 
 
     $btnPush = New-Object System.Windows.Forms.Button
