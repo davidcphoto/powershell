@@ -100,6 +100,7 @@ function listPackageComponents() {
             $componentItem = New-Object System.Windows.Forms.ListViewItem
             $componentItem.Text = $lstCopybooks[$i]
             $componentItem.SubItems.Add("CPY")
+            $componentItem.SubItems.Add("-")
             $componentItem.SubItems.Add("")
             $componentItem.SubItems.Add("")
             $componentItem.SubItems.Add("")
@@ -682,6 +683,7 @@ CNT=00001"
     $listViewComponents.Columns[2].Width = -2
     $listViewComponents.Columns[3].Width = -2
     $listViewComponents.Columns[4].Width = -2
+    $listViewComponents.Columns[5].Width = -2
 
     Write-Host ' (waiting)'
     return
