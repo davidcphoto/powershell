@@ -5,7 +5,7 @@ Add-Type -AssemblyName System.Drawing
 ####################################################################################
 #  Definitions                                                                     #
 ####################################################################################
-
+$user = ""
 switch ($env:USERNAME) {
     'd.fonseca.do.canto' {
         $user = 'X93182'
@@ -22,6 +22,7 @@ switch ($env:USERNAME) {
 }
 $compileJCLSuffix = '##'
 #
+$ListaPAcotes = @()
 $lblMainWindowTxt = 'ChangeMan'
 $lblPackageTxt    = 'Package'
 $lblUserTxt       = 'User'
@@ -46,20 +47,23 @@ function listPackageComponents() {
     $listViewComponents.Items.Clear()
     $progressBar.Value = 2
 
-    if ($txtBoxPackage.Text.Length -ne 9){
-        $txtboxPackageNumber = $txtBoxPackage.Text.substring(4)
-        ##Write-Host $txtboxPackageNumber
-        $txtboxPackageNumberMax = $txtboxPackageNumber.padleft(6,'0')
-        ##Write-Host $txtboxPackageNumberMax
-        ##$txtboxPackage = $txtBoxPackage.Text.substring(0,4) + $txtboxPackageNumberMax
-        ##Write-Host $txtboxPackage
-        $packageNumber = $txtboxPackageNumberMax
-        $txtBoxPackage.Text = $txtBoxPackage.Text.substring(0,4) + $txtboxPackageNumberMax
+    if ($cmbBoxPackage.Text.Length -ne 9){
+        $cmbBoxPackageNumber = $cmbBoxPackage.Text.substring(4)
+        ##Write-Host $cmbBoxPackageNumber
+        $cmbBoxPackageNumberMax = $cmbBoxPackageNumber.padleft(6,'0')
+        ##Write-Host $cmbBoxPackageNumberMax
+        ##$cmbBoxPackage = $cmbBoxPackage.Text.substring(0,4) + $cmbBoxPackageNumberMax
+        ##Write-Host $cmbBoxPackage
+        $packageNumber = $cmbBoxPackageNumberMax
+        $cmbBoxPackage.Text = $cmbBoxPackage.Text.substring(0,4) + $cmbBoxPackageNumberMax
     }
     else{
-        $packageNumber = $txtBoxPackage.Text.substring($txtBoxPackage.Text.Length - 6)
+        $packageNumber = $cmbBoxPackage.Text.substring($cmbBoxPackage.Text.Length - 6)
     }
-    Write-Host "   | " $txtBoxPackage.Text
+
+
+
+    Write-Host "   | " $cmbBoxPackage.Text
 
     $progressBar.Value = 3
     $progressBar.Refresh
@@ -76,7 +80,12 @@ function listPackageComponents() {
     $progressBar.Value = 5
     $progressBar.Refresh
 
+    $cmbBoxPackage.Items.Add($cmbBoxPackage.Text)
+    $Global:ListaPAcotes += $cmbBoxPackage.Text
+
     for ($i = 0; $i -lt $componentList.Length; $i++) {
+
+
         switch ($componentList[$i].substring($componentList[$i].Length - 3)) {
             'SRC' {
                 $lstPrograms = @(zowe zos-files list all-members $componentList[$i])
@@ -151,7 +160,7 @@ function pushComponent() {
     Write-Host " > pushComponent"
 
     $progressBar.Maximum = 5
-    $packageNumber = $txtBoxPackage.Text.Substring(4, 6)
+    $packageNumber = $cmbBoxPackage.Text.Substring(4, 6)
     $userName = $txtBoxUser.Text
 
     for ($i = 0; $i -lt $listViewComponents.SelectedItems.Count; $i++) {
@@ -381,7 +390,7 @@ function pullComponent() {
     Write-Host " > pullComponent"
 
     $progressBar.Maximum = 6
-    $packageNumber = $txtBoxPackage.Text.Substring(4, 6)
+    $packageNumber = $cmbBoxPackage.Text.Substring(4, 6)
 
     for ($i = 0; $i -lt $listViewComponents.SelectedItems.Count; $i++) {
 
@@ -561,7 +570,7 @@ function promote10() {
 
     Write-Host " > promote10"
 
-    $packageNumber = $txtboxPackageNumberMax
+    $packageNumber = $cmbBoxPackageNumberMax
     Write-Host "  packageNumber " + $packageNumber
 
     # $dec = $packageNumber
@@ -569,7 +578,7 @@ function promote10() {
     # Write-Host $hex
 
     $progressBar.Maximum = 5
-    $packageNumber = $txtBoxPackage.Text.Substring(4, 6)
+    $packageNumber = $cmbBoxPackage.Text.Substring(4, 6)
     $userName = $txtBoxUser.Text
 
 
@@ -698,6 +707,76 @@ CNT=00001"
     return
 }
 ####################################################################################
+#                        le lista de packages                                      #
+####################################################################################
+function Obtemdados() {
+
+    $path = $script:PSScriptRoot.ToString()
+    $json = Get-Content -Path $path\Packages.json -Raw | ConvertFrom-Json
+
+    # Loop through the objects in the JSON data
+    foreach ($object in $json.PSObject.Properties) {
+
+        Write-Host "Object name  : $($object.Name) Object value : $($object.Value)"
+
+        switch ($($object.Name)) {
+            "user" {
+                # Clear-Variable -Name user
+                $global:user = $($object.Value)
+            }
+            "packages" {
+
+                $objectproperties =  $object.Value
+                 Write-Host '$objectproperties ' objectproperties
+
+                foreach ($Value in $objectproperties) {
+
+                    Write-Host "Pacote Property name: $($Value)"
+                    $cmbBoxPackage.Items.Add($($Value))
+                    $Global:ListaPAcotes += $($Value)
+
+                }
+            }
+        }
+
+    }
+
+}
+####################################################################################
+#                        Grava lista de packages                                   #
+####################################################################################
+function salvaDados() {
+
+    Write-Host ' salvaDados'
+
+    $path = $script:PSScriptRoot.ToString()
+    $ficheiro = '{"user":"' + $User + '"'
+
+
+    if ($Global:ListaPAcotes.Count -gt 0) {
+
+        $ficheiro = $ficheiro + ',"packages":["'
+
+        for ($i = 0; $i -lt $Global:ListaPAcotes.Count; $i++) {
+
+            Write-Host ' $Global:ListaPAcotes[' $i '] ' $Global:ListaPAcotes[$i]
+            $ficheiro = $ficheiro + $Global:ListaPAcotes[$i]
+            if ($i -le $Global:ListaPAcotes.Count - 2) {
+                $ficheiro = $ficheiro + '","'
+            }
+        }
+        $ficheiro = $ficheiro + '"]'
+    }
+
+
+    $ficheiro = $ficheiro + '}'
+    $ficheiro | Out-file -encoding ASCII -noNewline -FilePath "$path\Packages.json"
+
+
+
+
+}
+####################################################################################
 #                        main                                                      #
 ####################################################################################
 function mainWindow {
@@ -719,19 +798,33 @@ function mainWindow {
     $frmMainWindow.Controls.Add($lblPackage)
 
 
-    $txtBoxPackage = New-Object System.Windows.Forms.TextBox
-    $txtBoxPackage.Location = New-Object System.Drawing.Point(70, 10)
-    $txtBoxPackage.Size = New-Object System.Drawing.Size(120, 20)
-    $txtBoxPackage.Text = $txtPackageTxt
-    $txtBoxPackage.MaxLength = 10
-    $txtBoxPackage.CharacterCasing = 'Upper'
-    $txtBoxPackage.Add_KeyDown({
+    # $cmbBoxPackage = New-Object System.Windows.Forms.TextBox
+    # $cmbBoxPackage.Location = New-Object System.Drawing.Point(70, 10)
+    # $cmbBoxPackage.Size = New-Object System.Drawing.Size(120, 20)
+    # $cmbBoxPackage.Text = $txtPackageTxt
+    # $cmbBoxPackage.MaxLength = 10
+    # $cmbBoxPackage.CharacterCasing = 'Upper'
+    # $cmbBoxPackage.Add_KeyDown({
+    #         if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+    #             #logic
+    #             listPackageComponents
+    #         }
+    #     })
+    # $frmMainWindow.Controls.Add($cmbBoxPackage)
+
+    $cmbBoxPackage = New-Object System.Windows.Forms.ComboBox
+    $cmbBoxPackage.Location = New-Object System.Drawing.Point(70, 10)
+    $cmbBoxPackage.Size = New-Object System.Drawing.Size(120, 20)
+    $cmbBoxPackage.Text = $txtPackageTxt
+    $cmbBoxPackage.MaxLength = 10
+    $cmbBoxPackage.MaxDropDownItems = 10
+    $cmbBoxPackage.Add_KeyDown({
             if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
                 #logic
                 listPackageComponents
             }
         })
-    $frmMainWindow.Controls.Add($txtBoxPackage)
+    $frmMainWindow.Controls.Add($cmbBoxPackage)
 
 
     $btnList = New-Object System.Windows.Forms.Button
@@ -827,8 +920,12 @@ function mainWindow {
     $progressBar.size = new-object System.Drawing.Size(315, 10)
     $frmMainWindow.Controls.Add($progressBar)
 
+    Obtemdados
+
     $frmMainWindow.Topmost = $true
     $frmMainWindow.ShowDialog()
+
+    salvaDados
 
 }
 ####################################################################################
