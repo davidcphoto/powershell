@@ -80,8 +80,10 @@ function listPackageComponents() {
     $progressBar.Value = 5
     $progressBar.Refresh
 
-    $cmbBoxPackage.Items.Add($cmbBoxPackage.Text)
-    $Global:ListaPAcotes += $cmbBoxPackage.Text
+    if ($Global:ListaPAcotes -notcontains $cmbBoxPackage.Text) {
+        $cmbBoxPackage.Items.Add($cmbBoxPackage.Text)
+        $Global:ListaPAcotes += $cmbBoxPackage.Text
+    }
 
     for ($i = 0; $i -lt $componentList.Length; $i++) {
 
