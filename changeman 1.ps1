@@ -22,7 +22,7 @@ switch ($env:USERNAME) {
 }
 $compileJCLSuffix = '##'
 #
-$ListaPAcotes = @()
+$ListaPAcotes = new-object 'System.Collections.Generic.List[string]'
 $lblMainWindowTxt = 'ChangeMan'
 $lblPackageTxt    = 'Package'
 $lblUserTxt       = 'User'
@@ -81,8 +81,21 @@ function listPackageComponents() {
     $progressBar.Refresh
 
     if ($Global:ListaPAcotes -notcontains $cmbBoxPackage.Text) {
-        $cmbBoxPackage.Items.Add($cmbBoxPackage.Text)
-        $Global:ListaPAcotes += $cmbBoxPackage.Text
+
+        $a = new-object 'System.Collections.Generic.List[string]'
+
+        $cmbBoxPackage.Items.Clear();
+            $cmbBoxPackage.Items.Add($cmbBoxPackage.Text)
+            $a += $cmbBoxPackage.Text
+
+        Write-Host ' $Global:ListaPAcotes ' $Global:ListaPAcotes
+
+        for ($i = 0; $i -lt $Global:ListaPAcotes.Count -and $i -lt 10; $i++) {
+            $cmbBoxPackage.Items.Add($Global:ListaPAcotes[$i])
+            $a += $Global:ListaPAcotes[$i]
+        }
+
+        $Global:ListaPAcotes = $a
     }
 
     for ($i = 0; $i -lt $componentList.Length; $i++) {
@@ -358,14 +371,11 @@ CNT=00001
             #Write-Host $compilationJobID
             if ($compilationJobID -eq '') {
                 @(listJobs '' $userName$compileJCLSuffix '') | ForEach-Object {if($_.status -eq "ACTIVE"){$compilationJobID = $_.jobid}}
-                if ($compilationJobID -eq '')
-                {
-                    @(listJobs '' $userName$compileJCLSuffix '') | ForEach-Object {if($_.status -eq "ACTIVE"){$compilationJobID = $_.jobid}}
+
                     if ($compilationJobID -eq '')
                     {
                         Write-Host 'Job Not Found'
                     }
-                }
             }
         }
 
